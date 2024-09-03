@@ -1,3 +1,5 @@
+# nohup bash -c "sudo python3 dronekit_flight_test.py"
+
 from dronekit import connect
 from dronekit import VehicleMode
 
