@@ -9,6 +9,12 @@ from PIL import Image
 from torchvision import transforms
 
 from reach.utils.colors import average_color
+from src.reach.config import (
+    MAX_PANTS_COLOR_DELTA,
+    MAX_TSHIRT_COLOR_DELTA,
+    MIN_PERSON_COMPARISON_MATCH_LEVEL_1,
+    MIN_PERSON_COMPARISON_MATCH_LEVEL_2,
+)
 
 
 class Person:
@@ -99,7 +105,7 @@ def check_if_such_person_exists(
 
             # print(delta_e)
 
-            if delta_e < 10:
+            if delta_e < MAX_TSHIRT_COLOR_DELTA:
                 similiarty_points += 1
 
         if pants_color:
@@ -118,7 +124,7 @@ def check_if_such_person_exists(
 
             # print(delta_e)
 
-            if delta_e < 10:
+            if delta_e < MAX_PANTS_COLOR_DELTA:
                 similiarty_points += 1
 
         # TODO:
@@ -151,9 +157,9 @@ def check_if_such_person_exists(
         cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
         similarity = cos(feat1, feat2).item()
 
-        if similarity > 0.9:
+        if similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_1:
             similiarty_points += 2
-        elif similarity > 0.8:
+        elif similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_2:
             similiarty_points += 1
 
         # Conclusion
