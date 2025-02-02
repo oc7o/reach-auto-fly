@@ -61,7 +61,7 @@ def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
             "/usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf", 25
         )
     except IOError:
-        print("Font not found, using default font.")
+        # print("Font not found, using default font.")
         font = ImageFont.load_default()
 
     for i in range(min(boxes.shape[0], max_boxes)):
