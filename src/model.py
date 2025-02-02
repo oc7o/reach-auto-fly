@@ -1,7 +1,11 @@
 print("--- starting program ---")
 
 ### Begin Config ###
-from src.reach.config import PERSON_RECOGNITION_ACCEPTANCE
+from reach.config import (
+    MAX_PERSONS_TRACKED,
+    PERSON_RECOGNITION_ACCEPTANCE,
+    SIMULATION_FRAME_SKIP,
+)
 
 # import os
 
@@ -31,7 +35,7 @@ from sklearn.utils import shuffle
 from torchvision import transforms
 
 from reach.feature_extraction import get_person_properties
-from reach.person import Person, check_if_such_person_exists
+from reach.person import Person, check_if_such_person_exists, get_least_accuracy_person
 from reach.utils.camera import format_image, take_photo
 from reach.utils.colors import average_color, most_common_pixel, reduce_colors
 from reach.utils.graphics import draw_bounding_box_on_image, draw_boxes
@@ -48,10 +52,11 @@ print("--- finished imports ---")
 
 ### Load Camera Stream
 
-camera0 = cv2.VideoCapture("../tmp/test_video4.MOV")
+# camera0 = cv2.VideoCapture("../tmp/test_video5.MOV")
+camera0 = cv2.VideoCapture("../tmp/test_video92.mov")
 # camera0 = cv2.VideoCapture(0)
 
-# video = cv2.VideoWriter("./video.avi", cv2.VideoWriter_fourcc(*"MJPG"), 4, (640, 640))
+video = cv2.VideoWriter("./video.avi", cv2.VideoWriter_fourcc(*"MJPG"), 4, (640, 640))
 
 
 ### Load Models
@@ -85,10 +90,14 @@ person_table = []
 frame_count = 0
 while True:
     print(frame_count)
-    if frame_count >= 50:
-        print(person_table)
-        sys.exit()
-    img = take_photo(camera0)
+    print(f"PT - {person_table}")
+    if frame_count >= 1000:
+        break  # sys.exit()
+
+    img = None
+    for i in range(SIMULATION_FRAME_SKIP):
+        img = take_photo(camera0)
+    time_after_photo = time.time()
     if img is None:
         break
     img = format_image(img)
@@ -101,10 +110,12 @@ while True:
         tshirt_color = None
         pants_color = None
 
+        recognition_accuracy = result["detection_scores"][0][detected_object]
+
+        # if object is human and accuracy over e.g. 30%
         if (
             result["detection_classes"][0][detected_object] == 1
-            and result["detection_scores"][0][detected_object]
-            > PERSON_RECOGNITION_ACCEPTANCE
+            and recognition_accuracy > PERSON_RECOGNITION_ACCEPTANCE
         ):
             ymin, xmin, ymax, xmax = tuple(
                 result["detection_boxes"][0][detected_object]
@@ -118,6 +129,10 @@ while True:
 
             resulted_pose_landmarks = pose.process(detected_person_frame)
 
+            tshirt_color = None
+            pants_color = None
+
+            # if pose landmarks can be found tshirt and pants color can be determined
             if resulted_pose_landmarks.pose_landmarks:
                 # mp_draw.draw_landmarks(detected_person_frame, resulted_pose_landmarks.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
@@ -138,49 +153,88 @@ while True:
                 # feature extraction done
                 # evaluating features
 
-                does_exist, person = check_if_such_person_exists(
-                    person_table,
-                    tshirt_color,
-                    pants_color,
-                    (ymin, xmin, ymax, xmax),
-                    detected_person_frame,
-                    reid_model,
-                )
+            does_exist, person = check_if_such_person_exists(
+                person_table,
+                tshirt_color,
+                pants_color,
+                (ymin, xmin, ymax, xmax),
+                detected_person_frame,
+                reid_model,
+            )
 
-                if does_exist:
-                    pass
+            print(f"DOES EXIST: {does_exist}; PERSON - {person}")
+
+            if does_exist and person != None:
+                # override person frame if accuracy is better
+                if recognition_accuracy > person.recognition_accuracy:
+                    person.person_image = detected_person_frame.copy()
+                # TODO: What happens when I find the person again?
+            else:
+                if (
+                    len(person_table)
+                    < MAX_PERSONS_TRACKED
+                    # and tshirt_color
+                    # and pants_color
+                ):
+                    # TODO: if t and p color cannot be determined: should still be changeable later
+                    person = Person(
+                        (ymin, xmin, ymax, xmax),
+                        tshirt_color,
+                        pants_color,
+                        detected_person_frame.copy(),
+                        recognition_accuracy,
+                        time_after_photo,
+                    )
+                    person_table.append(person)
                 else:
-                    if tshirt_color and pants_color:
+                    least_accuracy_person, table_id = get_least_accuracy_person(
+                        person_table
+                    )
+                    if (
+                        least_accuracy_person != None
+                        and least_accuracy_person.recognition_accuracy
+                        < recognition_accuracy
+                        and tshirt_color
+                        and pants_color
+                    ):
+                        del person_table[table_id]
                         person = Person(
                             (ymin, xmin, ymax, xmax),
                             tshirt_color,
                             pants_color,
                             detected_person_frame.copy(),
+                            recognition_accuracy,
+                            time_after_photo,
                         )
                         person_table.append(person)
 
                 person_count += 1
 
     # TODO: clean up persons from person_table who haven't been seen in a while (add timestamps)
+    for person in person_table:
+        person.clean_up()
 
     image_with_boxes = draw_boxes(
         img.reshape(640, 640, 3),
         result["detection_boxes"][0],
         result["detection_classes"][0],
         result["detection_scores"][0],
-        min_score=0.2,
+        min_score=PERSON_RECOGNITION_ACCEPTANCE,
     )
 
-    # video.write(image_with_boxes)
+    video.write(image_with_boxes)
 
-    # image_with_boxes = draw_boxes(
-    #   test.reshape(640,640,3), result["detection_boxes"][0],
-    #   result["detection_classes"][0], result["detection_scores"][0])
-
-    frame_count += 1
+    frame_count += SIMULATION_FRAME_SKIP
 
 
 ### Clean up ###
+
+# >>> DEVONLY: displaying persons in person table
+for person in person_table:
+    print(f"In person table: {person}")
+    plt.imshow(person.person_image)
+    plt.show()
+# <<<
 
 print(len(person_table))
 print(person_table)
@@ -188,5 +242,5 @@ print(person_table)
 print("End")
 
 camera0.release()
-# video.release()
+video.release()
 # cv2.destroyAllWindows()
