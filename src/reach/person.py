@@ -8,13 +8,14 @@ from colormath.color_objects import LabColor, sRGBColor
 from PIL import Image
 from torchvision import transforms
 
-from reach.utils.colors import average_color
-from src.reach.config import (
+from reach.config import (
     MAX_PANTS_COLOR_DELTA,
+    MAX_PERSON_DATA_LIST_ENTRIES,
     MAX_TSHIRT_COLOR_DELTA,
     MIN_PERSON_COMPARISON_MATCH_LEVEL_1,
     MIN_PERSON_COMPARISON_MATCH_LEVEL_2,
 )
+from reach.utils.colors import average_color
 
 
 class Person:
@@ -45,13 +46,19 @@ class Person:
         pants_color,
         person_image,
         recognition_accuracy,
+        first_seen,
     ):
         self.uuid = uuid4()
         self.all_box_dimensions.append(box_dimensions)
-        self.tshirt_colors = [tshirt_color]
-        self.pants_colors = [pants_color]
+        self.tshirt_colors = []
+        if tshirt_color:
+            self.tshirt_colors.append(tshirt_color)
+        self.pants_colors = []
+        if pants_color:
+            self.pants_colors.append(pants_color)
         self.person_image = person_image
         self.recognition_accuracy = recognition_accuracy
+        self.first_seen = first_seen
 
     def __str__(self):
         return str(self.uuid)
@@ -75,6 +82,12 @@ class Person:
         """
         pass
 
+    def clean_up(self):
+        if len(self.tshirt_colors) > MAX_PERSON_DATA_LIST_ENTRIES:
+            del self.tshirt_colors[0]
+        if len(self.pants_colors) > MAX_PERSON_DATA_LIST_ENTRIES:
+            del self.pants_colors[0]
+
 
 def check_if_such_person_exists(
     person_table: list,
@@ -89,7 +102,7 @@ def check_if_such_person_exists(
         # check color distance
         # tshirt
 
-        if tshirt_color:
+        if tshirt_color and len(person.tshirt_colors) > 0:
             # person_colror
             person_tshirt_color = sRGBColor(
                 *person.get_average_tshirt_color(), is_upscaled=True
@@ -108,7 +121,7 @@ def check_if_such_person_exists(
             if delta_e < MAX_TSHIRT_COLOR_DELTA:
                 similiarty_points += 1
 
-        if pants_color:
+        if pants_color and len(person.pants_colors) > 0:
             # pants
             person_pants_color = sRGBColor(
                 *person.get_average_pants_color(), is_upscaled=True
@@ -168,3 +181,16 @@ def check_if_such_person_exists(
         else:
             continue
     return (False, None)
+
+
+def get_least_accuracy_person(person_table):
+    least_accuracy = 1
+    least_accuracy_person = None
+    table_id = 0
+
+    for person_id, person in enumerate(person_table):
+        if person.recognition_accuracy < least_accuracy:
+            least_accuracy = person.recognition_accuracy
+            least_accuracy_person = person
+            table_id = person_id
+    return least_accuracy_person, table_id
