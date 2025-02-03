@@ -42,9 +42,9 @@ def flight_controller_daemon():
     while True:
         if not msg_queue.empty():
             message = msg_queue.get()
-            if message == "takeUp!":
+            if message == "takeUp":
                 arm_and_takeoff(vehicle, 1)
-            if message == "land!":
+            if message == "land":
                 land(vehicle)
 
 
