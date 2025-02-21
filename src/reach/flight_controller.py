@@ -2,6 +2,8 @@ import time
 
 from dronekit import VehicleMode
 
+from reach.config import MAXIMUM_WAIT_COUNT
+
 
 def arm_and_takeoff(vehicle, aTargetAltitude):
     """
@@ -9,18 +11,27 @@ def arm_and_takeoff(vehicle, aTargetAltitude):
     """
 
     print("Basic pre-arm checks")
+    wait_count = 0
     # Don't try to arm until autopilot is ready
     while not vehicle.is_armable:
+        if wait_count >= MAXIMUM_WAIT_COUNT:
+            print("[ERROR] Could not initialise!")
+            return
         print(" Waiting for vehicle to initialise...")
         time.sleep(1)
+        wait_count += 1
 
     print("Arming motors")
     # Copter should arm in GUIDED mode
     vehicle.mode = VehicleMode("GUIDED")
     vehicle.armed = True
 
+    wait_count = 0
     # Confirm vehicle armed before attempting to take off
     while not vehicle.armed:
+        if wait_count >= MAXIMUM_WAIT_COUNT:
+            print("[ERROR] Could not arm!")
+            return
         print(" Waiting for arming...")
         time.sleep(1)
 

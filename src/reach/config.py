@@ -8,6 +8,8 @@ load_dotenv()
 #     os.environ.get("PERSON_RECOGNITION_ACCEPTANCE", 0.2)
 # )
 
+
+# RECOGNITION & AI STUFF
 PERSON_RECOGNITION_ACCEPTANCE: float = 0.3
 MAX_PANTS_COLOR_DELTA = 15
 MAX_TSHIRT_COLOR_DELTA = 15
@@ -26,3 +28,6 @@ BROKER_IP = (
     "127.0.0.1"  # IP des MQTT-Brokers (z. B. dein RPi oder Mosquitto-Server)
 )
 TOPIC = "reach/drone"
+
+# FLIGHT CONTROL
+MAXIMUM_WAIT_COUNT = 5
