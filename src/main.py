@@ -44,7 +44,7 @@ def flight_controller_daemon():
             message = msg_queue.get()
             if message == "takeUp":
                 arm_and_takeoff(vehicle, 1)
-            if message == "land":
+            elif message == "land":
                 land(vehicle)
 
 
