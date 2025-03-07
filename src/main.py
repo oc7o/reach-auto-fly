@@ -1,6 +1,7 @@
 import collections
 import collections.abc
 import threading
+import time
 
 import cv2
 import matplotlib.pyplot as plt
@@ -9,15 +10,16 @@ import paho.mqtt.client as mqtt
 
 # import serial
 import tensorflow as tf
+from monotonic import sys
 
 collections.MutableMapping = collections.abc.MutableMapping
 
-from dronekit import connect
+from dronekit import VehicleMode, connect
 
 from reach.config import BROKER_IP
 from reach.flight_controller import arm_and_takeoff, land
 from reach.mqtt import on_connect, on_message
-from reach.thread_management import message_queues
+from reach.thread_management import drone_state, message_queues
 from reach.utils.camera import format_image, take_photo
 
 # # LoRa-Transmitter-Setup
@@ -35,17 +37,30 @@ from reach.utils.camera import format_image, take_photo
 # )
 
 
+def emergency_daemon():
+    while True:
+        if drone_state.vehicle == None:
+            print("Vehicle not initialized.")
+        if drone_state.emergency:
+            drone_state.vehicle.mode = VehicleMode("LAND")
+            while drone_state.vehicle.mode != "LAND":
+                print("Waiting for drone to enter LAND mode")
+                time.sleep(1)
+            print("Vehicle now in LAND mode. Will touch ground shortly.")
+            sys.exit()
+        time.sleep(0.1)
+
+
 def flight_controller_daemon():
-    vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
 
     msg_queue = message_queues["flight_controller_daemon"]
     while True:
         if not msg_queue.empty():
             message = msg_queue.get()
             if message == "takeUp":
-                arm_and_takeoff(vehicle, 1)
+                arm_and_takeoff(drone_state.vehicle, 1)
             elif message == "land":
-                land(vehicle)
+                land(drone_state.vehicle)
 
 
 def mqtt_listener_daemon():
@@ -62,12 +77,14 @@ def recognition_model_daemon():
 
 
 def main():
+    drone_state.vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
 
     # Start threads
     mqtt_thread = threading.Thread(target=mqtt_listener_daemon, daemon=True)
     flight_controller_thread = threading.Thread(
         target=flight_controller_daemon, daemon=True
     )
+    emergency_thread = threading.Thread(target=emergency_daemon, daemon=True)
 
     mqtt_thread.start()
     flight_controller_thread.start()

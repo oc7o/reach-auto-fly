@@ -1,6 +1,6 @@
 import time
 
-from dronekit import VehicleMode
+from dronekit import LocationGlobalRelative, VehicleMode
 
 from reach.config import MAXIMUM_WAIT_COUNT
 
@@ -55,3 +55,11 @@ def land(vehicle):
         print("Waiting for drone to enter LAND mode")
         time.sleep(1)
     print("Vehicle now in LAND mode. Will touch ground shortly.")
+
+
+def hold_postion(vehicle):
+    latitude = vehicle.location.global_relative_frame.lat
+    longitude = vehicle.location.global_relative_frame.lon
+    altitude = None
+
+    a_location = LocationGlobalRelative(latitude, longitude, altitude)
