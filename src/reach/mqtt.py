@@ -1,5 +1,4 @@
 from reach.config import TOPIC
-from reach.mqtt import drone_state
 from reach.thread_management import drone_state, message_queues
 
 
@@ -11,7 +10,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     message = msg.payload.decode()
     print(f"MESSAGE RECEIVED: {message}")
-    flight_controller_commands = ["takeUp", "land"]
+    flight_controller_commands = ["takeUp", "land", "holdPosition"]
 
     if message == "emergency":
         drone_state.emergency = True
@@ -19,10 +18,30 @@ def on_message(client, userdata, msg):
     elif message in flight_controller_commands:
         message_queues["flight_controller_daemon"].put(message)
 
-    elif message == "holdPosition":
-        pass
-
     elif message == "getDronePosition":
-        latitude = drone_state.vehicle.location.global_relative_frame.lat
-        longitude = drone_state.vehicle.location.global_relative_frame.lon
-        altitude = None
+
+        # print("Global Location: %s" % drone_state.vehicle.location.global_frame)
+        # print(
+        #     "Global Location (relative altitude): %s"
+        #     % drone_state.vehicle.location.global_relative_frame
+        # )
+        # print("Local Location: %s" % drone_state.vehicle.location.local_frame)  # NED
+
+        global_location = drone_state.vehicle.location.global_frame
+        global_location_ra = drone_state.vehicle.location.global_relative_frame
+
+        latitude = global_location.lat
+        longitude = global_location.lon
+        absolute_altitude = global_location.alt
+        relative_altitude = global_location_ra.alt
+        response = (
+            str(latitude)
+            + "|"
+            + str(longitude)
+            + "|"
+            + str(absolute_altitude)
+            + "|"
+            + str(relative_altitude)
+        )
+
+        client.publish(TOPIC, response)
