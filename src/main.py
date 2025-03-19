@@ -1,5 +1,6 @@
 import collections
 import collections.abc
+import sys
 import threading
 import time
 
@@ -10,7 +11,6 @@ import paho.mqtt.client as mqtt
 
 # import serial
 import tensorflow as tf
-from monotonic import sys
 
 collections.MutableMapping = collections.abc.MutableMapping
 
@@ -37,6 +37,12 @@ from reach.utils.camera import format_image, take_photo
 # )
 
 
+# def hold_postion_daemon():
+#     while True:
+#         if drone_state.hold_postion:
+#             drone_state.vehicle.mode = VehicleMode("PosHold")
+
+
 def emergency_daemon():
     while True:
         if drone_state.vehicle == None:
@@ -61,6 +67,8 @@ def flight_controller_daemon():
                 arm_and_takeoff(drone_state.vehicle, 1)
             elif message == "land":
                 land(drone_state.vehicle)
+            elif message == "holdPisition":
+                drone_state.vehicle.mode = VehicleMode("PosHold")
 
 
 def mqtt_listener_daemon():
