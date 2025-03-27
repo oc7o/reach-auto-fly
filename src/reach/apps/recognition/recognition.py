@@ -1,8 +1,12 @@
 import time
 
+from reach.apps.recognition.feature_extraction import get_person_properties
+from reach.apps.recognition.person import (
+    Person,
+    check_if_such_person_exists,
+    get_least_accuracy_person,
+)
 from reach.config import MAX_PERSONS_TRACKED, PERSON_RECOGNITION_ACCEPTANCE
-from reach.feature_extraction import get_person_properties
-from reach.person import Person, check_if_such_person_exists, get_least_accuracy_person
 from reach.utils.camera import format_image, take_photo
 
 
