@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def take_photo(camera):
+def take_photo(camera: cv2.VideoCapture):
     """Reads next frame from camera instance"""
     rval, frame = camera.read()
     return frame

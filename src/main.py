@@ -6,8 +6,17 @@ import time
 
 import cv2
 import matplotlib.pyplot as plt
+import mediapipe as mp
 import numpy as np
 import paho.mqtt.client as mqtt
+import torchreid
+
+
+def patch_asscalar(a):
+    return a.item()
+
+
+setattr(np, "asscalar", patch_asscalar)
 
 # import serial
 import tensorflow as tf
@@ -19,6 +28,7 @@ from dronekit import VehicleMode, connect
 from reach.config import BROKER_IP
 from reach.flight_controller import arm_and_takeoff, land
 from reach.mqtt import on_connect, on_message
+from reach.recognition import run_model
 from reach.thread_management import drone_state, message_queues
 from reach.utils.camera import format_image, take_photo
 
@@ -81,7 +91,34 @@ def mqtt_listener_daemon():
 
 
 def recognition_model_daemon():
-    pass
+    ## Load Camera Streams
+    camera0: cv2.VideoCapture = cv2.VideoCapture(0)
+
+    ## Load Models
+    ### Load pre-trained model for general object detection
+    object_detector = tf.saved_model.load(
+        "../src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/saved_model"
+    )
+
+    # Load pre-trained model for pose estimation
+    mp_pose = mp.solutions.pose
+    # mp_draw = mp.solutions.drawing_utils
+    pose = mp_pose.Pose()
+
+    # Load pre-trained model for reidentification
+    reid_model = torchreid.models.build_model(
+        name="osnet_x1_0",
+        num_classes=1000,  # Number of people in the dataset it was trained on
+        pretrained=True,
+    )
+    reid_model.eval()
+
+    # >>> RUNNING MODEL
+    run_model(object_detector, camera0, mp_pose, pose, reid_model)
+    # <<<
+
+    # CLEAN UP?
+    camera0.release()
 
 
 def main():
@@ -94,11 +131,15 @@ def main():
     )
     emergency_thread = threading.Thread(target=emergency_daemon, daemon=True)
 
+    recognition_thread = threading.Thread(target=recognition_model_daemon, daemon=True)
+
     mqtt_thread.start()
     flight_controller_thread.start()
+    recognition_thread.start()
 
     mqtt_thread.join()
     flight_controller_thread.join()
+    recognition_thread.join()
 
     # # take picture
     # frame = take_photo(camera0)
