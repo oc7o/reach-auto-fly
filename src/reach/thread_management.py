@@ -1,3 +1,4 @@
+import logging
 import queue
 
 from dronekit import Vehicle
@@ -7,6 +8,15 @@ message_queues = {
     "flight_controller_daemon": queue.Queue(),
     "recognition_model_daemon": queue.Queue(),
 }
+
+loggers = {
+    "main": logging.getLogger("main"),
+    "flight_controller_daemon": logging.getLogger("flight_controller_daemon"),
+    "recognition_model_daemon": logging.getLogger("recognition_model_daemon"),
+}
+
+for logger in loggers:
+    loggers[logger].propagate = False
 
 
 class DroneState:
