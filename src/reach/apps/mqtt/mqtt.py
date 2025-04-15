@@ -1,5 +1,5 @@
 from reach.config import TOPIC
-from reach.thread_management import drone_state, message_queues
+from reach.thread_management import drone_state, loggers, message_queues
 
 
 def on_connect(client, userdata, flags, rc):
@@ -45,3 +45,10 @@ def on_message(client, userdata, msg):
         )
 
         client.publish(TOPIC, response)
+
+
+def send_message(topic, message):
+    if drone_state.mqtt_client is None:
+        loggers["mqtt_listener_daemon"].warning("Not connected to mqtt server")
+    else:
+        drone_state.mqtt_client.publish(topic, message)
