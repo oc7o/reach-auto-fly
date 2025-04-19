@@ -1,3 +1,4 @@
+import logging
 import time
 
 from reach.apps.recognition.feature_extraction import get_person_properties
@@ -7,7 +8,6 @@ from reach.apps.recognition.person import (
     get_least_accuracy_person,
 )
 from reach.config import MAX_PERSONS_TRACKED, PERSON_RECOGNITION_ACCEPTANCE
-from reach.thread_management import loggers
 from reach.utils.camera import format_image, take_photo
 
 
@@ -19,7 +19,9 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
         img = take_photo(camera)
         time_after_photo = time.time()
         if img is None:
-            loggers["recognition_model_daemon"].error("Error reading video stream")
+            logging.getLogger("recognition_model_daemon").error(
+                "Error reading video stream"
+            )
             break
         img = format_image(img)
 
@@ -104,7 +106,9 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                             time_after_photo,
                         )
                         person_table.append(person)
-                        loggers["recognition_model_daemon"].info("FOUND NEW PERSON")
+                        logging.getLogger("recognition_model_daemon").info(
+                            "FOUND NEW PERSON"
+                        )
                         print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
                     else:
                         least_accuracy_person, table_id = get_least_accuracy_person(
@@ -127,7 +131,9 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                                 time_after_photo,
                             )
                             person_table.append(person)
-                            loggers["recognition_model_daemon"].info("FOUND NEW PERSON")
+                            logging.getLogger("recognition_model_daemon").info(
+                                "FOUND NEW PERSON"
+                            )
                             print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
         # TODO: clean up persons from person_table who haven't been seen in a while (add timestamps)

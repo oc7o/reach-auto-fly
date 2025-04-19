@@ -27,7 +27,10 @@ SIMULATION_FRAME_SKIP = 5  # Default 1
 BROKER_IP = (
     "127.0.0.1"  # IP des MQTT-Brokers (z. B. dein RPi oder Mosquitto-Server)
 )
-TOPIC = "reach/drone"
+TOPIC = "reach/drone"  # will deprecate
+COMMAND_TOPIC = "reach/command"
+RESPONSE_TOPIC = "reach/response"
+# CLIENT_ID = "reach_drone"
 
 # FLIGHT CONTROL
 MAXIMUM_WAIT_COUNT = 5

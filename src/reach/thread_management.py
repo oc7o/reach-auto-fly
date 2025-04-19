@@ -10,15 +10,15 @@ message_queues = {
     "recognition_model_daemon": queue.Queue(),
 }
 
-loggers = {
-    "main": logging.getLogger("main"),
-    "mqtt_listener_daemon": logging.getLogger("mqtt_listener_daemon"),
-    "flight_controller_daemon": logging.getLogger("flight_controller_daemon"),
-    "recognition_model_daemon": logging.getLogger("recognition_model_daemon"),
-}
+# loggers = {
+#     "main": logging.getLogger("main"),
+#     "mqtt_listener_daemon": logging.getLogger("mqtt_listener_daemon"),
+#     "flight_controller_daemon": logging.getLogger("flight_controller_daemon"),
+#     "recognition_model_daemon": logging.getLogger("recognition_model_daemon"),
+# }
 
-for logger in loggers:
-    loggers[logger].propagate = False
+# for logger in loggers:
+#     loggers[logger].propagate = False
 
 
 class DroneState:
