@@ -1,6 +1,8 @@
 import logging
 import time
+from typing import Any
 
+from reach.apps.mqtt.mqtt import send_message, send_response
 from reach.apps.recognition.feature_extraction import get_person_properties
 from reach.apps.recognition.person import (
     Person,
@@ -8,7 +10,55 @@ from reach.apps.recognition.person import (
     get_least_accuracy_person,
 )
 from reach.config import MAX_PERSONS_TRACKED, PERSON_RECOGNITION_ACCEPTANCE
+from reach.thread_management import drone_state
 from reach.utils.camera import format_image, take_photo
+
+
+def send_found_person(
+    pants_color, tshirt_color, image_of_person, recognition_accuracy, found_timestamp
+):
+    send_messages = True
+    vehicle_access = True
+    msg: dict[str, Any] = {"type": "found_person"}
+
+    mqtt_client = drone_state.mqtt_client
+    if mqtt_client is None:
+        send_messages = False
+        logging.getLogger("mqtt_listener_daemon").error("❌ No mqtt connection")
+
+    vehicle = drone_state.vehicle
+    if vehicle is None:
+        vehicle_access = False
+        logging.getLogger("flight_controller_daemon").error("❌ No vehicle connection")
+
+    msg["type"] = "hello"
+    msg["lon"] = "test"
+
+    if vehicle_access:
+        ### TODO: GPS will be integrated into the recognition model as metadata
+        global_location = vehicle.location.global_frame
+        global_location_ra = vehicle.location.global_relative_frame
+        statelites_visible = vehicle.gps_0.satellites_visible
+        ###
+        msg["lat"] = global_location.lat
+        msg["lon"] = global_location.lon
+        msg["alt"] = global_location_ra.alt  # relative
+        msg["alt_abs"] = global_location.alt
+        msg["statelites_visible"] = statelites_visible
+
+    logging.debug("colors")
+    logging.debug(pants_color)
+    logging.debug(tshirt_color)
+    logging.debug(
+        # image_of_person,
+        recognition_accuracy,
+    )
+    logging.debug(found_timestamp)
+
+    # idk
+    # logging.getLogger("")
+    if send_messages:
+        send_response(mqtt_client, msg)
 
 
 def run_model(object_detector, camera, mp_pose, pose, reid_model):
@@ -109,7 +159,13 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                         logging.getLogger("recognition_model_daemon").info(
                             "FOUND NEW PERSON"
                         )
-                        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+                        send_found_person(
+                            tshirt_color,
+                            pants_color,
+                            detected_person_frame.copy(),
+                            recognition_accuracy,
+                            time_after_photo,
+                        )
                     else:
                         least_accuracy_person, table_id = get_least_accuracy_person(
                             person_table
@@ -134,7 +190,6 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                             logging.getLogger("recognition_model_daemon").info(
                                 "FOUND NEW PERSON"
                             )
-                            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
         # TODO: clean up persons from person_table who haven't been seen in a while (add timestamps)
         for person in person_table:

@@ -10,7 +10,6 @@ from reach.apps.recognition.recognition import run_model
 
 def recognition_model_daemon():
 
-    print("------------------------")
     ## Load Camera Streams
     camera0: cv2.VideoCapture = cv2.VideoCapture(0)
 
