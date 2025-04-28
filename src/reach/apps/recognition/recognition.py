@@ -31,9 +31,6 @@ def send_found_person(
         vehicle_access = False
         logging.getLogger("flight_controller_daemon").error("❌ No vehicle connection")
 
-    msg["type"] = "hello"
-    msg["lon"] = "test"
-
     if vehicle_access:
         ### TODO: GPS will be integrated into the recognition model as metadata
         global_location = vehicle.location.global_frame
@@ -46,6 +43,9 @@ def send_found_person(
         msg["alt_abs"] = global_location.alt
         msg["statelites_visible"] = statelites_visible
 
+    msg["vehicle_access"] = vehicle_access
+    msg["recognition_accuracy"] = recognition_accuracy
+    msg["found_timestamp"] = found_timestamp
     logging.debug("colors")
     logging.debug(pants_color)
     logging.debug(tshirt_color)
