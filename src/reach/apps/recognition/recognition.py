@@ -1,6 +1,9 @@
 import logging
 import time
 from typing import Any
+import base64
+
+import numpy as np
 
 from reach.apps.mqtt.mqtt import send_message, send_response
 from reach.apps.recognition.feature_extraction import get_person_properties
@@ -13,6 +16,19 @@ from reach.config import MAX_PERSONS_TRACKED, PERSON_RECOGNITION_ACCEPTANCE
 from reach.thread_management import drone_state
 from reach.utils.camera import format_image, take_photo
 
+def frame_to_b64(frame_np: np.ndarray):
+    # → BGR‑Array zu JPEG bytes (kleiner als PNG)
+    ok, jpeg_bytes = cv2.imencode(".jpg", frame_np, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    if not ok:
+        return
+    # → Base64‑String für JSON
+    b64 = base64.b64encode(jpeg_bytes.tobytes()).decode("ascii")
+
+    return {
+        "type": "camera_frame",
+        "mime": "image/jpeg",
+        "data": b64,
+    }
 
 def send_found_person(
     pants_color, tshirt_color, image_of_person, recognition_accuracy, found_timestamp
