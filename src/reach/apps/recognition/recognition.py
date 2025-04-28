@@ -63,9 +63,13 @@ def send_found_person(
         msg["statelites_visible"] = statelites_visible
 
     msg["vehicle_access"] = vehicle_access
-    msg["recognition_accuracy"] = recognition_accuracy
-    msg["found_timestamp"] = found_timestamp
-    msg["image_of_person"] = frame_to_b64(image_of_person)
+    msg["recognition_accuracy"] = str(recognition_accuracy)
+    msg["found_timestamp"] = str(found_timestamp)
+
+    image_of_person_b64 = frame_to_b64(image_of_person)
+    msg["image_of_person"] = image_of_person_b64
+
+    logging.debug(image_of_person_b64)
 
     logging.debug("colors")
     logging.debug(pants_color)
@@ -78,6 +82,9 @@ def send_found_person(
 
     # idk
     # logging.getLogger("")
+
+    logging.debug(msg)
+
     if send_messages:
         send_response(mqtt_client, msg)
 
