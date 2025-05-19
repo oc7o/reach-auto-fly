@@ -4,6 +4,7 @@ import logging
 import sys
 import threading
 import time
+from threading import Thread
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,13 +44,13 @@ def main():
         )
 
     # Start threads
-    mqtt_thread = threading.Thread(target=mqtt_listener_daemon, daemon=True)
-    flight_controller_thread = threading.Thread(
+    mqtt_thread: Thread = Thread(target=mqtt_listener_daemon, daemon=True)
+    flight_controller_thread: Thread = Thread(
         target=flight_controller_daemon, daemon=True
     )
     # emergency_thread = threading.Thread(target=emergency_daemon, daemon=True)
 
-    recognition_thread = threading.Thread(target=recognition_model_daemon, daemon=True)
+    recognition_thread: Thread = Thread(target=recognition_model_daemon, daemon=True)
 
     mqtt_thread.start()
     flight_controller_thread.start()

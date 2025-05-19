@@ -1,13 +1,13 @@
 import logging
-import queue
+from queue import Queue
 
 from dronekit import Vehicle
 from paho.mqtt.client import Client
 
-message_queues = {
-    "mqtt_listener_daemon": queue.Queue(),
-    "flight_controller_daemon": queue.Queue(),
-    "recognition_model_daemon": queue.Queue(),
+message_queues: dict[str, Queue] = {
+    "mqtt_listener_daemon": Queue(),
+    "flight_controller_daemon": Queue(),
+    "recognition_model_daemon": Queue(),
 }
 
 # loggers = {
@@ -22,10 +22,10 @@ message_queues = {
 
 
 class DroneState:
-    emergency = False
-    hold_postion = [False, ""]
+    emergency: bool = False
+    hold_postion: tuple[bool, str] = (False, "")
     vehicle: Vehicle | None = None
     mqtt_client: Client | None = None
 
 
-drone_state = DroneState()
+drone_state: DroneState = DroneState()
