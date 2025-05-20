@@ -1,14 +1,16 @@
-import logging
+from logging import Logger, getLogger
 
-import paho.mqtt.client as mqtt
+from paho.mqtt.client import Client as MQTTClient
 
 from reach.apps.mqtt.mqtt import on_connect, on_message
 from reach.config import BROKER_IP
 from reach.thread_management import drone_state
 
 
-def mqtt_listener_daemon():
-    client = mqtt.Client()
+def mqtt_listener_daemon() -> None:
+    logger: Logger = getLogger("mqtt_listener_daemon")
+
+    client: MQTTClient = MQTTClient()
     client.on_connect = on_connect
     client.on_message = on_message
 
@@ -17,7 +19,5 @@ def mqtt_listener_daemon():
     try:
         client.connect(BROKER_IP, 1883, 60)
     except OSError:
-        logging.getLogger("mqtt_listener_daemon").warning(
-            "Unable to connect to MQTT-Server."
-        )
+        logger.warning("Unable to connect to MQTT-Server.")
     client.loop_forever()  # Lässt den Client dauerhaft laufen

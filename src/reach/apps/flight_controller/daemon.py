@@ -24,4 +24,5 @@ def flight_controller_daemon() -> None:
             elif message == "land":
                 land(drone_state.vehicle)
             elif message == "holdPisition":
+                assert drone_state.vehicle is not None
                 drone_state.vehicle.mode = VehicleMode("PosHold")

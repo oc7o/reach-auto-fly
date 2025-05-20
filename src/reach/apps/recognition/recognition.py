@@ -6,7 +6,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from reach.apps.mqtt.mqtt import send_message, send_response
+from reach.apps.mqtt.mqtt import send_response
 from reach.apps.recognition.feature_extraction import get_person_properties
 from reach.apps.recognition.person import (
     Person,
