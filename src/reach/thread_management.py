@@ -26,6 +26,7 @@ class DroneState:
     hold_postion: tuple[bool, str] = (False, "")
     vehicle: Vehicle | None = None
     mqtt_client: Client | None = None
+    gps_location: dict[str, float | None] | None = None
 
 
 drone_state: DroneState = DroneState()
