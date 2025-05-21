@@ -1,35 +1,34 @@
-import logging
+from logging import Logger, getLogger
 
-import cv2
 import mediapipe as mp
 import tensorflow as tf
 import torchreid
+from cv2 import VideoCapture
 
 from reach.apps.recognition.recognition import run_model
 
 
 def recognition_model_daemon():
+    logger: Logger = getLogger("recognition_model_daemon")
 
     ## Load Camera Streams
-    camera0: cv2.VideoCapture = cv2.VideoCapture(0)
+    camera0: VideoCapture = VideoCapture(0)
 
-    logging.getLogger("recognition_model_daemon").info("loaded camera")
+    logger.info("loaded camera")
 
     ## Load Models
     ### Load pre-trained model for general object detection
     object_detector = tf.saved_model.load(
         "../src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/saved_model"
-    )
-    logging.getLogger("recognition_model_daemon").info(
-        "loaded general object detection model"
-    )
+    )  # ? Which Type is this???
+    logger.info("loaded general object detection model")
 
     # Load pre-trained model for pose estimation
-    mp_pose = mp.solutions.pose
+    mp_pose = mp.solutions.pose  # ? Which Type is this???
     # mp_draw = mp.solutions.drawing_utils
     pose = mp_pose.Pose()
 
-    logging.getLogger("recognition_model_daemon").info("loaded pose estimation model")
+    logger.info("loaded pose estimation model")
 
     # Load pre-trained model for reidentification
     reid_model = torchreid.models.build_model(
@@ -39,7 +38,7 @@ def recognition_model_daemon():
     )
     reid_model.eval()
 
-    logging.getLogger("recognition_model_daemon").info("loaded re-id model")
+    logger.info("loaded re-id model")
 
     # >>> RUNNING MODEL
     run_model(object_detector, camera0, mp_pose, pose, reid_model)
