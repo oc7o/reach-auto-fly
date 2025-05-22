@@ -1,4 +1,5 @@
 from logging import Logger, getLogger
+from typing import Callable
 
 import mediapipe as mp
 import tensorflow as tf

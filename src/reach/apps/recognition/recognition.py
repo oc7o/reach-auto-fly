@@ -1,10 +1,12 @@
 import base64
 import logging
 import time
+from logging import Logger, getLogger
 from typing import Any
 
 import cv2
 import numpy as np
+from cv2.typing import MatLike
 
 from reach.apps.mqtt.mqtt import send_response
 from reach.apps.recognition.feature_extraction import get_person_properties
@@ -90,18 +92,17 @@ def send_found_person(
 
 
 def run_model(object_detector, camera, mp_pose, pose, reid_model):
-    person_table = []
+    logger: Logger = getLogger("recognition_model_daemon")
+
+    person_table: list[Person] = []
 
     while True:
-        img = None
-        img = take_photo(camera)
+        img_raw: MatLike | None = take_photo(camera)
         time_after_photo = time.time()
-        if img is None:
-            logging.getLogger("recognition_model_daemon").error(
-                "Error reading video stream"
-            )
+        if img_raw is None:
+            logger.error("Error reading video stream")
             break
-        img = format_image(img)
+        img: np.ndarray = format_image(img_raw)
 
         result = object_detector(img)
         result = {key: value.numpy() for key, value in result.items()}
