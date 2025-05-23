@@ -104,6 +104,7 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
             break
         img: np.ndarray = format_image(img_raw)
 
+        # TODO: typing rework from here on
         result = object_detector(img)
         result = {key: value.numpy() for key, value in result.items()}
 
