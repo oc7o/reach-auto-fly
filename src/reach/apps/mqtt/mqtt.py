@@ -5,6 +5,7 @@ from typing import Any
 from paho.mqtt.client import Client as MQTTClient
 
 from reach.apps.flight_controller.utils import get_gps
+from reach.apps.mqtt.message.responses import GetGPSResponse
 from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC, TOPIC
 from reach.exceptions import NoMQTTConnectionException, NoVehicleConnectionException
 from reach.thread_management import drone_state, message_queues
@@ -43,8 +44,10 @@ def handle_command(client: MQTTClient, command: dict):
     cmd_type = command.get("type")
 
     if cmd_type == "get_gps":
+
+        # TODO: handle_command
         try:
-            gps_data: dict[str, Any] = get_gps()
+            response: GetGPSResponse = get_gps()
         except NoVehicleConnectionException as e:
             res = {
                 "type": "error",

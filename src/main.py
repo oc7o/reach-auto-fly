@@ -36,12 +36,12 @@ def main():
         handlers=[logging.StreamHandler()],
     )
 
+    logger: logging.Logger = logging.getLogger("main")
+
     try:
         drone_state.vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
     except (FileNotFoundError, SerialException) as e:
-        logging.getLogger("main").warning(
-            "Could not connect to vehicle flight controller"
-        )
+        logger.warning("Could not connect to vehicle flight controller")
 
     # Start threads
     mqtt_thread: Thread = Thread(target=mqtt_listener_daemon, daemon=True)

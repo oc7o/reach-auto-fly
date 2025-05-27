@@ -2,6 +2,7 @@ from dronekit import LocationGlobal, LocationGlobalRelative
 
 from reach.exceptions import NoVehicleConnectionException
 from reach.thread_management import drone_state
+from src.reach.apps.mqtt.message.responses import GetGPSResponse
 
 
 def drone_is_initialized() -> bool:
@@ -13,7 +14,7 @@ def drone_is_initialized() -> bool:
     return True
 
 
-def get_gps() -> dict:
+def get_gps() -> GetGPSResponse:
     """
     ! This will be removed
     TODO: Remove
@@ -30,10 +31,14 @@ def get_gps() -> dict:
     # absolute_altitude = global_location.alt
     # relative_altitude = global_location_ra.alt
 
-    return {
-        "lat": global_location.lat,
-        "lon": global_location.lon,
-        "alt": global_location_ra.alt,  # relative
-        "alt_abs": global_location.alt,
-        "statelites_visible": statelites_visible,
-    }
+    message: GetGPSResponse = GetGPSResponse(
+        {
+            "lat": global_location.lat,
+            "lon": global_location.lon,
+            "alt": global_location_ra.alt,  # relative
+            "alt_abs": global_location.alt,
+            "statelites_visible": statelites_visible,
+        }
+    )
+
+    return message
