@@ -8,7 +8,7 @@ from reach.apps.flight_controller.utils import get_gps
 from reach.apps.mqtt.message.responses import GetGPSResponse
 from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC, TOPIC
 from reach.exceptions import NoMQTTConnectionException, NoVehicleConnectionException
-from reach.thread_management import drone_state, message_queues
+from reach.thread_management import DroneState, message_queues
 
 
 def on_connect(client: MQTTClient, userdata, flags, rc):

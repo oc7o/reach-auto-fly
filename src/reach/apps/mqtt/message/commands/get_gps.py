@@ -1,11 +1,18 @@
+# ! This will deprecate
+
 from typing import Any, ClassVar, Optional
 
 from reach.apps.mqtt.message import Message
 from reach.apps.mqtt.message.responses import GetGPSResponse
-from reach.thread_management import drone_state
+from reach.thread_management import DroneState
 
 
 class GetGPSCommand(Message):
+    """
+
+    TODO: This won't be handled by a command but by a loop which broadcasts location
+    """
+
     message_type: ClassVar[str] = "command"
     command: ClassVar[str] = "get_gps"
 
@@ -27,13 +34,13 @@ class GetGPSCommand(Message):
 
     @classmethod
     def handle_command(cls) -> GetGPSResponse:
-        assert drone_state.gps_location is not None
+        assert DroneState.gps_location is not None
         return GetGPSResponse(
             {
-                "lat": drone_state.gps_location["lat"],
-                "lon": drone_state.gps_location["lon"],
-                "alt": drone_state.gps_location["alt"],  # relative
-                "alt_abs": drone_state.gps_location["alt_abs"],
-                "statelites_visible": drone_state.gps_location["statelites_visible"],
+                "lat": DroneState.gps_location.lat,
+                "lon": DroneState.gps_location.lon,
+                "alt": DroneState.gps_location.alt,  # relative
+                "alt_abs": DroneState.gps_location.alt_abs,
+                "statelites_visible": DroneState.gps_location.statelites_visible,
             }
         )

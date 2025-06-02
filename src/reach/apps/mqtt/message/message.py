@@ -17,5 +17,5 @@ class Message(ABC):
         pass
 
     @abstractmethod
-    def from_dict(cls, data: Dict[str, Any]) -> None:
+    def from_dict(self, data: Dict[str, Any]) -> None:
         pass

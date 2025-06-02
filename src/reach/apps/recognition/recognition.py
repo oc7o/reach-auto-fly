@@ -16,7 +16,7 @@ from reach.apps.recognition.person import (
     get_least_accuracy_person,
 )
 from reach.config import MAX_PERSONS_TRACKED, PERSON_RECOGNITION_ACCEPTANCE
-from reach.thread_management import drone_state
+from reach.thread_management import DroneState
 from reach.utils.camera import format_image, take_photo
 
 
@@ -42,12 +42,12 @@ def send_found_person(
     vehicle_access = True
     msg: dict[str, Any] = {"type": "found_person"}
 
-    mqtt_client = drone_state.mqtt_client
+    mqtt_client = DroneState.mqtt_client
     if mqtt_client is None:
         send_messages = False
         logging.getLogger("mqtt_listener_daemon").error("❌ No mqtt connection")
 
-    vehicle = drone_state.vehicle
+    vehicle = DroneState.vehicle
     if vehicle is None:
         vehicle_access = False
         logging.getLogger("flight_controller_daemon").error("❌ No vehicle connection")

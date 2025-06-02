@@ -1,3 +1,5 @@
+# ! This will deprecate
+
 from typing import Any, ClassVar, Optional
 
 from reach.apps.mqtt.message import Message
@@ -12,6 +14,7 @@ class GetGPSResponse(Message):
     alt: float
     alt_abs: float
     satelites_visible: int
+    timestemp: float
 
     def __init__(self, data: Optional[dict[str, Any]]) -> None:
         super().__init__(data)
@@ -28,6 +31,7 @@ class GetGPSResponse(Message):
             "alt": self.alt,
             "alt_abs": self.alt_abs,
             "satelites_visible": self.satelites_visible,
+            "timestemp": self.timestemp,
         }
 
     def from_dict(self, data: dict[str, Any]) -> None:
@@ -36,5 +40,6 @@ class GetGPSResponse(Message):
         self.alt = data["alt"]
         self.alt_abs = data["alt_abs"]
         self.satelites_visible = data["satelites_visible"]
+        self.timestemp = data["satelites_visible"]
         if "uuid" in data.values():
             self.uuid = data["uuid"]

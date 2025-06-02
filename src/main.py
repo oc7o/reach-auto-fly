@@ -25,7 +25,7 @@ from reach.apps.flight_controller.daemon import flight_controller_daemon
 from reach.apps.mqtt.daemon import mqtt_listener_daemon
 from reach.apps.recognition.daemon import recognition_model_daemon
 from reach.config import BROKER_IP
-from reach.thread_management import drone_state
+from reach.thread_management import DroneState
 from reach.utils.camera import format_image, take_photo
 
 
@@ -39,7 +39,7 @@ def main():
     logger: logging.Logger = logging.getLogger("main")
 
     try:
-        drone_state.vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
+        DroneState.vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
     except (FileNotFoundError, SerialException) as e:
         logger.warning("Could not connect to vehicle flight controller")
 

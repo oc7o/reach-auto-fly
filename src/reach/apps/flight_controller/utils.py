@@ -1,12 +1,12 @@
 from dronekit import LocationGlobal, LocationGlobalRelative
 
 from reach.exceptions import NoVehicleConnectionException
-from reach.thread_management import drone_state
+from reach.thread_management import DroneState
 from src.reach.apps.mqtt.message.responses import GetGPSResponse
 
 
 def drone_is_initialized() -> bool:
-    if drone_state.vehicle is None:
+    if DroneState.vehicle is None:
         # loggers["flight_controller_daemon"].warning(
         #     "Connection to flight controller not initialized, unable to perform actions on vehicle"
         # )
@@ -19,14 +19,14 @@ def get_gps() -> GetGPSResponse:
     ! This will be removed
     TODO: Remove
     """
-    if drone_state.vehicle is None:
+    if DroneState.vehicle is None:
         raise NoVehicleConnectionException()
 
-    global_location: LocationGlobal = drone_state.vehicle.location.global_frame
+    global_location: LocationGlobal = DroneState.vehicle.location.global_frame
     global_location_ra: LocationGlobalRelative = (
-        drone_state.vehicle.location.global_relative_frame
+        DroneState.vehicle.location.global_relative_frame
     )
-    statelites_visible: int | None = drone_state.vehicle.gps_0.satellites_visible
+    statelites_visible: int | None = DroneState.vehicle.gps_0.satellites_visible
 
     # absolute_altitude = global_location.alt
     # relative_altitude = global_location_ra.alt
