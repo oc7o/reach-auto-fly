@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from cv2.typing import MatLike
 
+from reach.apps.flight_controller.gps_data import GPSData
 from reach.apps.mqtt.mqtt import send_response
 from reach.apps.recognition.feature_extraction import get_person_properties
 from reach.apps.recognition.person import (
@@ -22,7 +23,9 @@ from reach.utils.camera import format_image, take_photo
 
 def frame_to_b64(frame_np: np.ndarray):
     # → BGR‑Array zu JPEG bytes (kleiner als PNG)
-    ok, jpeg_bytes = cv2.imencode(".jpg", frame_np, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    ok, jpeg_bytes = cv2.imencode(
+        ".jpg", frame_np, [cv2.IMWRITE_JPEG_QUALITY, 80]
+    )
     if not ok:
         return
     # → Base64‑String für JSON
@@ -36,7 +39,12 @@ def frame_to_b64(frame_np: np.ndarray):
 
 
 def send_found_person(
-    pants_color, tshirt_color, image_of_person, recognition_accuracy, found_timestamp
+    pants_color,
+    tshirt_color,
+    image_of_person,
+    recognition_accuracy,
+    found_timestamp,
+    gps_location: GPSData,
 ):
     send_messages = True
     vehicle_access = True
@@ -50,19 +58,16 @@ def send_found_person(
     vehicle = DroneState.vehicle
     if vehicle is None:
         vehicle_access = False
-        logging.getLogger("flight_controller_daemon").error("❌ No vehicle connection")
+        logging.getLogger("flight_controller_daemon").error(
+            "❌ No vehicle connection"
+        )
 
     if vehicle_access:
-        ### TODO: GPS will be integrated into the recognition model as metadata
-        global_location = vehicle.location.global_frame
-        global_location_ra = vehicle.location.global_relative_frame
-        statelites_visible = vehicle.gps_0.satellites_visible
-        ###
-        msg["lat"] = global_location.lat
-        msg["lon"] = global_location.lon
-        msg["alt"] = global_location_ra.alt  # relative
-        msg["alt_abs"] = global_location.alt
-        msg["statelites_visible"] = statelites_visible
+        msg["lat"] = gps_location.lat
+        msg["lon"] = gps_location.lon
+        msg["alt"] = gps_location.alt  # relative
+        msg["alt_abs"] = gps_location.alt_abs
+        msg["statelites_visible"] = gps_location.statelites_visible
 
     msg["vehicle_access"] = vehicle_access
     msg["recognition_accuracy"] = str(recognition_accuracy)
@@ -88,7 +93,7 @@ def send_found_person(
     logging.debug(msg)
 
     if send_messages:
-        send_response(mqtt_client, msg)
+        send_response(msg)
 
 
 def run_model(object_detector, camera, mp_pose, pose, reid_model):
@@ -99,6 +104,9 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
     while True:
         img_raw: MatLike | None = take_photo(camera)
         time_after_photo = time.time()
+
+        assert DroneState.gps_location is not None
+        gps_after_photo = DroneState.gps_location.copy()
         if img_raw is None:
             logger.error("Error reading video stream")
             break
@@ -109,10 +117,12 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
         result = {key: value.numpy() for key, value in result.items()}
 
         for detected_object in range(result["detection_classes"].shape[1]):
-            tshirt_color = None
-            pants_color = None
+            tshirt_color: None | tuple[float] = None
+            pants_color = None | tuple[float] = None
 
-            recognition_accuracy = result["detection_scores"][0][detected_object]
+            recognition_accuracy = result["detection_scores"][0][
+                detected_object
+            ]
 
             # if object is human and accuracy over e.g. 30%
             if (
@@ -124,7 +134,8 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                 )
 
                 detected_person_frame = img.reshape(640, 640, 3)[
-                    int(ymin * 640) : int(ymax * 640), int(xmin * 640) : int(xmax * 640)
+                    int(ymin * 640) : int(ymax * 640),
+                    int(xmin * 640) : int(xmax * 640),
                 ].copy()
 
                 resulted_pose_landmarks = pose.process(detected_person_frame)
@@ -141,7 +152,7 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                     res = get_person_properties(
                         detected_person_frame, landmarks, mp_pose
                     )
-                    if res == None:
+                    if res is None:
                         continue
 
                     tshirt_color = res["tshirt_color"]
@@ -164,26 +175,26 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                     reid_model,
                 )
 
-                if does_exist and person != None:
+                if does_exist and person is not None:
                     # override person frame if accuracy is better
                     if recognition_accuracy > person.recognition_accuracy:
                         person.person_image = detected_person_frame.copy()
                     # TODO: What happens when I find the person again?
                 else:
                     if (
-                        len(person_table)
-                        < MAX_PERSONS_TRACKED
+                        len(person_table) < MAX_PERSONS_TRACKED
                         # and tshirt_color
                         # and pants_color
                     ):
                         # TODO: if t and p color cannot be determined: should still be changeable later
                         person = Person(
-                            (ymin, xmin, ymax, xmax),
-                            tshirt_color,
-                            pants_color,
-                            detected_person_frame.copy(),
-                            recognition_accuracy,
-                            time_after_photo,
+                            box_dimensions=(ymin, xmin, ymax, xmax),
+                            tshirt_color=tshirt_color,
+                            pants_color=pants_color,
+                            person_image=detected_person_frame.copy(),
+                            recognition_accuracy=recognition_accuracy,
+                            first_seen=time_after_photo,
+                            gps_location=gps_after_photo,
                         )
                         person_table.append(person)
                         logging.getLogger("recognition_model_daemon").info(
@@ -197,8 +208,8 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                             time_after_photo,
                         )
                     else:
-                        least_accuracy_person, table_id = get_least_accuracy_person(
-                            person_table
+                        least_accuracy_person, table_id = (
+                            get_least_accuracy_person(person_table)
                         )
                         if (
                             least_accuracy_person != None

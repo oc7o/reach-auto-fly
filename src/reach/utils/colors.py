@@ -6,7 +6,7 @@ from PIL import Image
 
 def reduce_colors(image_rgb):
     img = Image.fromarray(image_rgb)
-    img_8bit = img.convert("P", palette=Image.ADAPTIVE, colors=256)
+    img_8bit = img.convert("P", palette=Image.Palette.ADAPTIVE, colors=256)
     img_8bit_np = np.array(img_8bit)
     return img_8bit_np
 

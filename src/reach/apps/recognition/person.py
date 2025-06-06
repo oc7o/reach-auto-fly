@@ -8,6 +8,7 @@ from colormath.color_objects import LabColor, sRGBColor
 from PIL import Image
 from torchvision import transforms
 
+from reach.apps.flight_controller.gps_data import GPSData
 from reach.config import (
     MAX_PANTS_COLOR_DELTA,
     MAX_PERSON_DATA_LIST_ENTRIES,
@@ -36,17 +37,19 @@ class Person:
     pants_colors: list[list[int]]
     first_seen: float  # time.time()
     last_seen: float  # time.time()
+    gps_location: GPSData
     person_image: np.ndarray | None = None
     recognition_accuracy: float
 
     def __init__(
         self,
         box_dimensions,
-        tshirt_color,
-        pants_color,
-        person_image,
-        recognition_accuracy,
-        first_seen,
+        tshirt_color: list[int],
+        pants_color: list[int],
+        person_image: np.ndarray,
+        recognition_accuracy: float,
+        first_seen: float,
+        gps_location: GPSData,
     ):
         self.uuid = uuid4()
         self.all_box_dimensions.append(box_dimensions)
@@ -59,6 +62,7 @@ class Person:
         self.person_image = person_image
         self.recognition_accuracy = recognition_accuracy
         self.first_seen = first_seen
+        self.gps_location = gps_location
 
     def __str__(self):
         return str(self.uuid)
@@ -108,7 +112,9 @@ def check_if_such_person_exists(
                 *person.get_average_tshirt_color(), is_upscaled=True
             )
             #
-            compareable_tshirt_color = sRGBColor(*tshirt_color, is_upscaled=True)
+            compareable_tshirt_color = sRGBColor(
+                *tshirt_color, is_upscaled=True
+            )
 
             # Convert from RGB to Lab Color Space
             color1_lab = convert_color(person_tshirt_color, LabColor)
