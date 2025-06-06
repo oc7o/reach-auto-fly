@@ -5,6 +5,7 @@ from reach.apps.mqtt.message import Message
 
 
 class GPSDataBroadcast(Message):
+    message_type: ClassVar[str] = "broadcast"
     command: ClassVar[str] = "gps_data"
 
     gps_data: GPSData
@@ -15,6 +16,7 @@ class GPSDataBroadcast(Message):
 
     def to_dict(self) -> dict[str, Any]:
         response: dict[str, Any] = self.gps_data.to_dict()
+        response["message_type"] = self.message_type
         response["command"] = self.command
         return response
 

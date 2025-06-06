@@ -1,14 +1,13 @@
 import json
 from logging import Logger, getLogger
-from typing import Any
 
 from paho.mqtt.client import Client as MQTTClient
 
-from reach.apps.flight_controller.utils import get_gps
-from reach.apps.mqtt.message.responses import GetGPSResponse
-from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC, TOPIC
-from reach.exceptions import NoMQTTConnectionException, NoVehicleConnectionException
-from reach.thread_management import DroneState, message_queues
+from reach.apps.mqtt.message.commands.goto_location import (
+    GotoLocation,
+)
+from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC
+from src.reach.thread_management import DroneState
 
 
 def on_connect(client: MQTTClient, userdata, flags, rc):
@@ -31,7 +30,10 @@ def on_message(client: MQTTClient, userdata, msg):
         logger.error(f"❌ Parsing error: {e}")
 
 
-def send_response(client: MQTTClient, data):
+def send_response(data):
+    assert DroneState.mqtt_client is not None
+    client = DroneState.mqtt_client
+
     logger: Logger = getLogger("mqtt_listener_daemon")
 
     payload: str = json.dumps(data)
@@ -39,31 +41,36 @@ def send_response(client: MQTTClient, data):
     logger.info(f"📤 sent response: {payload}")
 
 
-def handle_command(client: MQTTClient, command: dict):
+def handle_command(client: MQTTClient, payload: dict):
     logger: Logger = getLogger("mqtt_listener_daemon")
-    cmd_type = command.get("type")
+    message_type = payload.get("message_type")
+    command = payload.get("command")
 
-    if cmd_type == "get_gps":
+    if message_type == "command":
+        if command == GotoLocation.command:
+            GotoLocation.handle_command(payload)
 
-        # TODO: handle_command
-        try:
-            response: GetGPSResponse = get_gps()
-        except NoVehicleConnectionException as e:
-            res = {
-                "type": "error",
-                "message": "could not read gps data, flight controller might be offline",
-            }
+            # elif cmd_type == "get_gps":
+
+            #     # TODO: handle_command
+            #     try:
+            #         response: GetGPSResponse = get_gps()
+            #     except NoVehicleConnectionException as e:
+            #         res = {
+            #             "type": "error",
+            #             "message": "could not read gps data, flight controller might be offline",
+            #         }
+            #     else:
+            #         res: dict[str, Any] = gps_data
+            #         res["type"] = "get_gps"
+            #
+            # send_response(client, res)
+
+        elif command == "ping":
+            send_response({"type": "ping", "status": "online"})
+
         else:
-            res: dict[str, Any] = gps_data
-            res["type"] = "get_gps"
-
-        send_response(client, res)
-
-    elif cmd_type == "ping":
-        send_response(client, {"type": "ping", "status": "online"})
-
-    else:
-        logger.warning(f"⚠️ unknown command: {cmd_type}")
-        send_response(
-            client, {"type": "error", "message": f"unknown command: {cmd_type}"}
-        )
+            logger.warning(f"⚠️ unknown command: {command}")
+            send_response(
+                {"type": "error", "message": f"unknown command: {command}"},
+            )
