@@ -3,10 +3,16 @@ from logging import Logger, getLogger
 
 from paho.mqtt.client import Client as MQTTClient
 
-from reach.apps.mqtt.message.commands.goto_location import (
-    GotoLocation,
+from reach.apps.mqtt.message.commands import (
+    GotoLocationCommand,
+    HoldPositionCommand,
+    LandCommand,
+    TakeoffCommand,
 )
 from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC
+from src.reach.apps.mqtt.message.commands.relative_move import (
+    RelativeMoveCommand,
+)
 from src.reach.thread_management import DroneState
 
 
@@ -47,8 +53,20 @@ def handle_command(client: MQTTClient, payload: dict):
     command = payload.get("command")
 
     if message_type == "command":
-        if command == GotoLocation.command:
-            GotoLocation.handle_command(payload)
+        if command == GotoLocationCommand.command:
+            GotoLocationCommand.handle_command(payload)
+
+        elif command == TakeoffCommand.command:
+            TakeoffCommand.handle_command(payload)
+
+        elif command == LandCommand.command:
+            LandCommand.handle_command(payload)
+
+        elif command == HoldPositionCommand.command:
+            HoldPositionCommand.handle_command(payload)
+
+        elif command == RelativeMoveCommand.command:
+            RelativeMoveCommand.handle_command(payload)
 
             # elif cmd_type == "get_gps":
 

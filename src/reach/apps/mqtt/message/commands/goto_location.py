@@ -7,7 +7,7 @@ from reach.apps.mqtt.message import Message
 from reach.thread_management import DroneState
 
 
-class GotoLocation(Message):
+class GotoLocationCommand(Message):
     message_type: ClassVar[str] = "command"
     command: ClassVar[str] = "goto_location"
 
