@@ -1,4 +1,6 @@
 import json
+import time
+from typing import Any
 
 from paho.mqtt.client import Client as MQTTClient
 
@@ -9,6 +11,57 @@ COMMAND_TOPIC = "reach/command"
 
 client.connect("127.0.0.1", 1883, 60)
 
-data = {}
-payload: str = json.dumps(data)
-client.publish(COMMAND_TOPIC, payload)
+
+def exec_command(command: dict[str, Any], client: MQTTClient) -> None:
+    """
+    Execute a command by publishing it to the MQTT broker.
+
+    :param command: The command to execute, as a dictionary.
+    :param client: The MQTT client to use for publishing.
+    """
+    topic = COMMAND_TOPIC
+    payload = json.dumps(command)
+    client.publish(topic, payload)
+    # print(f"Command published to {topic}: {payload}")
+
+
+exec_command(
+    {
+        "type": "command",
+        "command": "takeoff",
+    },
+    client,
+)
+time.sleep(5)
+exec_command(
+    {
+        "type": "command",
+        "command": "hold_position",
+    },
+    client,
+)
+time.sleep(5)
+exec_command(
+    {
+        "type": "command",
+        "command": "relative_move",
+        "x": 1.0,  # forward movement in meters
+    },
+    client,
+)
+time.sleep(5)
+exec_command(
+    {
+        "type": "command",
+        "command": "hold_position",
+    },
+    client,
+)
+time.sleep(5)
+exec_command(
+    {
+        "type": "command",
+        "command": "land",
+    },
+    client,
+)
