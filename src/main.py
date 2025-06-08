@@ -1,12 +1,8 @@
 import collections
 import collections.abc
 import logging
-import sys
-import threading
-import time
 from threading import Thread
 
-import matplotlib.pyplot as plt
 import numpy as np
 from serial.serialutil import SerialException
 
@@ -19,14 +15,14 @@ setattr(np, "asscalar", patch_asscalar)
 
 collections.MutableMapping = collections.abc.MutableMapping
 
-from dronekit import VehicleMode, connect
+
+import dronekit as _  # noqa: F401
+from dronekit import connect
 
 from reach.apps.flight_controller.daemon import flight_controller_daemon
 from reach.apps.mqtt.daemon import mqtt_listener_daemon
 from reach.apps.recognition.daemon import recognition_model_daemon
-from reach.config import BROKER_IP
 from reach.thread_management import DroneState
-from reach.utils.camera import format_image, take_photo
 
 
 def main():
@@ -39,8 +35,10 @@ def main():
     logger: logging.Logger = logging.getLogger("main")
 
     try:
-        DroneState.vehicle = connect("/dev/ttyACM0", baud=57600, wait_ready=True)
-    except (FileNotFoundError, SerialException) as e:
+        DroneState.vehicle = connect(
+            "/dev/ttyACM0", baud=57600, wait_ready=True
+        )
+    except (FileNotFoundError, SerialException):
         logger.warning("Could not connect to vehicle flight controller")
 
     # Start threads
@@ -50,7 +48,9 @@ def main():
     )
     # emergency_thread = threading.Thread(target=emergency_daemon, daemon=True)
 
-    recognition_thread: Thread = Thread(target=recognition_model_daemon, daemon=True)
+    recognition_thread: Thread = Thread(
+        target=recognition_model_daemon, daemon=True
+    )
 
     mqtt_thread.start()
     flight_controller_thread.start()
