@@ -1,13 +1,15 @@
-import logging
-import queue
+from queue import Queue
+from typing import ClassVar
 
 from dronekit import Vehicle
 from paho.mqtt.client import Client
 
-message_queues = {
-    "mqtt_listener_daemon": queue.Queue(),
-    "flight_controller_daemon": queue.Queue(),
-    "recognition_model_daemon": queue.Queue(),
+from reach.apps.flight_controller.gps_data import GPSData
+
+message_queues: dict[str, Queue] = {
+    "mqtt_listener_daemon": Queue(),
+    "flight_controller_daemon": Queue(),
+    "recognition_model_daemon": Queue(),
 }
 
 # loggers = {
@@ -22,10 +24,8 @@ message_queues = {
 
 
 class DroneState:
-    emergency = False
-    hold_postion = [False, ""]
-    vehicle: Vehicle | None = None
-    mqtt_client: Client | None = None
-
-
-drone_state = DroneState()
+    emergency: ClassVar[bool] = False
+    hold_postion: ClassVar[tuple[bool, str]] = (False, "")
+    vehicle: ClassVar[Vehicle | None] = None
+    mqtt_client: ClassVar[Client | None] = None
+    gps_location: ClassVar[GPSData | None] = None
