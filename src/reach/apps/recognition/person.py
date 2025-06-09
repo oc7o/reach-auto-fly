@@ -6,6 +6,7 @@ from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
 from PIL import Image
+from torch import Tensor
 from torchvision import transforms
 
 from reach.apps.flight_controller.gps_data import GPSData
@@ -33,8 +34,8 @@ class Person:
 
     uuid: UUID
     all_box_dimensions: list[list[int]] = []  # ymin,xmin,ymax,xmax
-    tshirt_colors: list[list[int]]
-    pants_colors: list[list[int]]
+    tshirt_colors: list[tuple[int, int, int]]
+    pants_colors: list[tuple[int, int, int]]
     first_seen: float  # time.time()
     last_seen: float  # time.time()
     gps_location: GPSData
@@ -44,8 +45,8 @@ class Person:
     def __init__(
         self,
         box_dimensions,
-        tshirt_color: list[int],
-        pants_color: list[int],
+        tshirt_color: tuple[int, int, int] | None,
+        pants_color: tuple[int, int, int] | None,
         person_image: np.ndarray,
         recognition_accuracy: float,
         first_seen: float,
@@ -64,7 +65,7 @@ class Person:
         self.first_seen = first_seen
         self.gps_location = gps_location
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.uuid)
 
     def __repr__(self) -> str:
@@ -86,39 +87,57 @@ class Person:
         """
         pass
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         if len(self.tshirt_colors) > MAX_PERSON_DATA_LIST_ENTRIES:
             del self.tshirt_colors[0]
         if len(self.pants_colors) > MAX_PERSON_DATA_LIST_ENTRIES:
             del self.pants_colors[0]
 
 
+def image_transform(image: np.ndarray) -> Tensor:
+    transform: transforms.Compose = transforms.Compose(
+        [
+            transforms.Resize((256, 128)),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+            ),
+        ]
+    )
+
+    img_t: Tensor = transform(Image.fromarray(image))  # type: ignore
+
+    return img_t
+
+
 def check_if_such_person_exists(
-    person_table: list,
-    tshirt_color,
-    pants_color,
-    box_dimensions,
-    compareable_image,
-    reid_model,
-):
+    person_table: list[Person],
+    tshirt_color: tuple[int, int, int] | None,
+    pants_color: tuple[int, int, int] | None,
+    box_dimensions: tuple[int, int, int, int],
+    compareable_image: np.ndarray,
+    reid_model: torch.nn.Module,
+) -> tuple[bool, Person | None]:
     for person in person_table:
-        similiarty_points = 0
+        similiarty_points: int = 0
         # check color distance
         # tshirt
 
         if tshirt_color and len(person.tshirt_colors) > 0:
             # person_colror
-            person_tshirt_color = sRGBColor(
+            person_tshirt_color: sRGBColor = sRGBColor(
                 *person.get_average_tshirt_color(), is_upscaled=True
             )
             #
-            compareable_tshirt_color = sRGBColor(
+            compareable_tshirt_color: sRGBColor = sRGBColor(
                 *tshirt_color, is_upscaled=True
             )
 
             # Convert from RGB to Lab Color Space
-            color1_lab = convert_color(person_tshirt_color, LabColor)
-            color2_lab = convert_color(compareable_tshirt_color, LabColor)
+            color1_lab: LabColor = convert_color(person_tshirt_color, LabColor)
+            color2_lab: LabColor = convert_color(
+                compareable_tshirt_color, LabColor
+            )
 
             delta_e = delta_e_cie2000(color1_lab, color2_lab)
 
@@ -152,34 +171,25 @@ def check_if_such_person_exists(
 
         # check compareable image
 
-        transform = transforms.Compose(
-            [
-                transforms.Resize((256, 128)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ]
-        )
+        if person.person_image is not None:
+            img1: Tensor = image_transform(person.person_image).unsqueeze(
+                0
+            )  # Add batch dimension
+            img2: Tensor = image_transform(compareable_image).unsqueeze(0)
 
-        img1 = transform(Image.fromarray(person.person_image)).unsqueeze(
-            0
-        )  # Add batch dimension
-        img2 = transform(Image.fromarray(compareable_image)).unsqueeze(0)
+            # Extract feature embeddings
+            with torch.no_grad():
+                feat1 = reid_model(img1)
+                feat2 = reid_model(img2)
 
-        # Extract feature embeddings
-        with torch.no_grad():
-            feat1 = reid_model(img1)
-            feat2 = reid_model(img2)
+            # Compare features using cosine similarity or Euclidean distance
+            cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+            similarity = cos(feat1, feat2).item()
 
-        # Compare features using cosine similarity or Euclidean distance
-        cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-        similarity = cos(feat1, feat2).item()
-
-        if similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_1:
-            similiarty_points += 2
-        elif similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_2:
-            similiarty_points += 1
+            if similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_1:
+                similiarty_points += 2
+            elif similarity > MIN_PERSON_COMPARISON_MATCH_LEVEL_2:
+                similiarty_points += 1
 
         # Conclusion
         if similiarty_points >= 2:  # normally 4
@@ -189,10 +199,12 @@ def check_if_such_person_exists(
     return (False, None)
 
 
-def get_least_accuracy_person(person_table):
-    least_accuracy = 1
-    least_accuracy_person = None
-    table_id = 0
+def get_least_accuracy_person(
+    person_table: list[Person],
+) -> tuple[Person | None, int]:
+    least_accuracy: float = 1
+    least_accuracy_person: Person = person_table[0]
+    table_id: int = 0
 
     for person_id, person in enumerate(person_table):
         if person.recognition_accuracy < least_accuracy:

@@ -1,5 +1,6 @@
 import json
 from logging import Logger, getLogger
+from typing import Any
 
 from paho.mqtt.client import Client as MQTTClient
 
@@ -16,7 +17,7 @@ from src.reach.apps.mqtt.message.commands.relative_move import (
 from src.reach.thread_management import DroneState
 
 
-def on_connect(client: MQTTClient, userdata, flags, rc):
+def on_connect(client: MQTTClient, userdata, flags, rc) -> None:
     logger: Logger = getLogger("mqtt_listener_daemon")
     if rc == 0:
         logger.info("✅ Connected with mqtt broker")
@@ -26,7 +27,7 @@ def on_connect(client: MQTTClient, userdata, flags, rc):
     logger.info(f"📡 subscribed: {COMMAND_TOPIC}")
 
 
-def on_message(client: MQTTClient, userdata, msg):
+def on_message(client: MQTTClient, userdata, msg) -> None:
     logger: Logger = getLogger("mqtt_listener_daemon")
     logger.info(f"📥 received message on {msg.topic}: {msg.payload.decode()}")
     try:
@@ -36,9 +37,9 @@ def on_message(client: MQTTClient, userdata, msg):
         logger.error(f"❌ Parsing error: {e}")
 
 
-def send_response(data):
+def send_response(data: dict[str, Any]) -> None:
     assert DroneState.mqtt_client is not None
-    client = DroneState.mqtt_client
+    client: MQTTClient = DroneState.mqtt_client
 
     logger: Logger = getLogger("mqtt_listener_daemon")
 
@@ -47,7 +48,7 @@ def send_response(data):
     logger.info(f"📤 sent response: {payload}")
 
 
-def handle_command(client: MQTTClient, payload: dict):
+def handle_command(client: MQTTClient, payload: dict) -> None:
     logger: Logger = getLogger("mqtt_listener_daemon")
     message_type = payload.get("message_type")
     command = payload.get("command")

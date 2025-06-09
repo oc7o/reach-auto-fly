@@ -6,6 +6,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+import torch
 from cv2.typing import MatLike
 
 from reach.apps.flight_controller.gps_data import GPSData
@@ -96,7 +97,12 @@ def send_found_person(
         send_response(msg)
 
 
-def run_model(object_detector, camera, mp_pose, pose, reid_model):
+def run_model(
+    object_detector,
+    camera: cv2.VideoCapture,
+    pose,
+    reid_model: torch.nn.Module,
+):
     logger: Logger = getLogger("recognition_model_daemon")
 
     person_table: list[Person] = []
@@ -117,8 +123,8 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
         result = {key: value.numpy() for key, value in result.items()}
 
         for detected_object in range(result["detection_classes"].shape[1]):
-            tshirt_color: None | tuple[float] = None
-            pants_color = None | tuple[float] = None
+            tshirt_color: tuple[int, int, int] | None = None
+            pants_color: tuple[int, int, int] | None = None
 
             recognition_accuracy = result["detection_scores"][0][
                 detected_object
@@ -150,7 +156,7 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                     landmarks = resulted_pose_landmarks.pose_landmarks.landmark
 
                     res = get_person_properties(
-                        detected_person_frame, landmarks, mp_pose
+                        detected_person_frame, landmarks
                     )
                     if res is None:
                         continue
@@ -206,13 +212,14 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                             detected_person_frame.copy(),
                             recognition_accuracy,
                             time_after_photo,
+                            gps_after_photo,
                         )
                     else:
                         least_accuracy_person, table_id = (
                             get_least_accuracy_person(person_table)
                         )
                         if (
-                            least_accuracy_person != None
+                            least_accuracy_person is not None
                             and least_accuracy_person.recognition_accuracy
                             < recognition_accuracy
                             and tshirt_color
@@ -226,6 +233,7 @@ def run_model(object_detector, camera, mp_pose, pose, reid_model):
                                 detected_person_frame.copy(),
                                 recognition_accuracy,
                                 time_after_photo,
+                                gps_after_photo,
                             )
                             person_table.append(person)
                             logging.getLogger("recognition_model_daemon").info(

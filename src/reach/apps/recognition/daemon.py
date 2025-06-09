@@ -1,10 +1,10 @@
 from logging import Logger, getLogger
-from typing import Callable
 
-import mediapipe as mp
 import tensorflow as tf
+import torch
 import torchreid
 from cv2 import VideoCapture
+from mediapipe.python.solutions.pose import Pose
 
 from reach.apps.recognition.recognition import run_model
 
@@ -25,14 +25,13 @@ def recognition_model_daemon():
     logger.info("loaded general object detection model")
 
     # Load pre-trained model for pose estimation
-    mp_pose = mp.solutions.pose  # ? Which Type is this???
     # mp_draw = mp.solutions.drawing_utils
-    pose = mp_pose.Pose()
+    pose: Pose = Pose()
 
     logger.info("loaded pose estimation model")
 
     # Load pre-trained model for reidentification
-    reid_model = torchreid.models.build_model(
+    reid_model: torch.nn.Module = torchreid.models.build_model(
         name="osnet_x1_0",
         num_classes=1000,  # Number of people in the dataset it was trained on
         pretrained=True,
@@ -42,7 +41,7 @@ def recognition_model_daemon():
     logger.info("loaded re-id model")
 
     # >>> RUNNING MODEL
-    run_model(object_detector, camera0, mp_pose, pose, reid_model)
+    run_model(object_detector, camera0, pose, reid_model)
     # <<<
 
     # CLEAN UP?
