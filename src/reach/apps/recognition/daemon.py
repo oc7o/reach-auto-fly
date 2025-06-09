@@ -18,7 +18,7 @@ def recognition_model_daemon():
     ## Load Models
     ### Load pre-trained model for general object detection
     object_detector = tf.saved_model.load(
-        "../src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/saved_model"
+        "./src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/saved_model"
     )
     logging.getLogger("recognition_model_daemon").info(
         "loaded general object detection model"
