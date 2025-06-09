@@ -32,7 +32,7 @@ exec_command(
     },
     client,
 )
-time.sleep(5)
+time.sleep(10)
 exec_command(
     {
         "type": "command",
@@ -40,7 +40,7 @@ exec_command(
     },
     client,
 )
-time.sleep(5)
+time.sleep(10)
 exec_command(
     {
         "type": "command",
@@ -49,7 +49,7 @@ exec_command(
     },
     client,
 )
-time.sleep(5)
+time.sleep(10)
 exec_command(
     {
         "type": "command",
@@ -57,7 +57,7 @@ exec_command(
     },
     client,
 )
-time.sleep(5)
+time.sleep(10)
 exec_command(
     {
         "type": "command",

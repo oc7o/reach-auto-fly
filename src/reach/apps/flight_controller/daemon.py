@@ -1,18 +1,16 @@
-import logging
 import time
 from logging import Logger, getLogger
 from queue import Queue
 
-from dronekit import LocationGlobal, LocationGlobalRelative, VehicleMode, connect
+from dronekit import LocationGlobal, LocationGlobalRelative
 
-from reach.apps.flight_controller.flight_controller import arm_and_takeoff, land
+# from reach.apps.flight_controller.flight_controller import arm_and_takeoff, land
 from reach.apps.flight_controller.gps_data import GPSData
 from reach.apps.flight_controller.utils import drone_is_initialized
+from reach.apps.mqtt.message.broadcasts.gps_data import GPSDataBroadcast
+from reach.apps.mqtt.message.serialization import serialize_message
+from reach.config import GPS_TOPIC
 from reach.thread_management import DroneState, message_queues
-from src.reach.apps import mqtt
-from src.reach.apps.mqtt.message.broadcasts.gps_data import GPSDataBroadcast
-from src.reach.apps.mqtt.message.serialization import serialize_message
-from src.reach.config import GPS_TOPIC
 
 
 def flight_controller_daemon() -> None:
@@ -28,26 +26,32 @@ def flight_controller_daemon() -> None:
         if not drone_is_initialized():
             # print("Waiting for drone intitlization")
             pass
-        elif not msg_queue.empty():
-            assert DroneState.vehicle is not None  # * see drone_is_initialized()
-            message: str = msg_queue.get()
-            if message == "takeUp":
-                arm_and_takeoff(DroneState.vehicle, 1)
-            elif message == "land":
-                land(DroneState.vehicle)
-            elif message == "holdPisition":
-                DroneState.vehicle.mode = VehicleMode("PosHold")
+        # elif not msg_queue.empty():
+        #     assert (
+        #         DroneState.vehicle is not None
+        #     )  # * see drone_is_initialized()
+        #     message: str = msg_queue.get()
+        #     if message == "takeUp":
+        #         arm_and_takeoff(DroneState.vehicle, 1)
+        #     elif message == "land":
+        #         land(DroneState.vehicle)
+        #     elif message == "holdPisition":
+        #         DroneState.vehicle.mode = VehicleMode("PosHold")
         elif time.time() - last_time > 0.1:  # 100ms TODO: config.py ?
             # Do things in spare time
 
             assert DroneState.vehicle is not None
 
             now = time.time()
-            global_location: LocationGlobal = DroneState.vehicle.location.global_frame
+            global_location: LocationGlobal = (
+                DroneState.vehicle.location.global_frame
+            )
             global_location_ra: LocationGlobalRelative = (
                 DroneState.vehicle.location.global_relative_frame
             )
-            statelites_visible: int | None = DroneState.vehicle.gps_0.satellites_visible
+            statelites_visible: int | None = (
+                DroneState.vehicle.gps_0.satellites_visible
+            )
 
             gps_data = GPSData(
                 {

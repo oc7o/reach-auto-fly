@@ -10,11 +10,11 @@ from reach.apps.mqtt.message.commands import (
     LandCommand,
     TakeoffCommand,
 )
-from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC
-from src.reach.apps.mqtt.message.commands.relative_move import (
+from reach.apps.mqtt.message.commands.relative_move import (
     RelativeMoveCommand,
 )
-from src.reach.thread_management import DroneState
+from reach.config import COMMAND_TOPIC, RESPONSE_TOPIC
+from reach.thread_management import DroneState
 
 
 def on_connect(client: MQTTClient, userdata, flags, rc) -> None:

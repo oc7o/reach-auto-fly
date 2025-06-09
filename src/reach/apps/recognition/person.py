@@ -134,10 +134,10 @@ def check_if_such_person_exists(
             )
 
             # Convert from RGB to Lab Color Space
-            color1_lab: LabColor = convert_color(person_tshirt_color, LabColor)
+            color1_lab: LabColor = convert_color(person_tshirt_color, LabColor)  # type: ignore
             color2_lab: LabColor = convert_color(
                 compareable_tshirt_color, LabColor
-            )
+            )  # type: ignore
 
             delta_e = delta_e_cie2000(color1_lab, color2_lab)
 
@@ -155,8 +155,8 @@ def check_if_such_person_exists(
             compareable_pants_color = sRGBColor(*pants_color, is_upscaled=True)
 
             # Convert from RGB to Lab Color Space
-            color1_lab = convert_color(person_pants_color, LabColor)
-            color2_lab = convert_color(compareable_pants_color, LabColor)
+            color1_lab = convert_color(person_pants_color, LabColor)  # type: ignore
+            color2_lab = convert_color(compareable_pants_color, LabColor)  # type: ignore
 
             delta_e = delta_e_cie2000(color1_lab, color2_lab)
 

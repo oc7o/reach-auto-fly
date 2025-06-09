@@ -1,8 +1,8 @@
 from dronekit import LocationGlobal, LocationGlobalRelative
 
+from reach.apps.mqtt.message.responses import GetGPSResponse
 from reach.exceptions import NoVehicleConnectionException
 from reach.thread_management import DroneState
-from src.reach.apps.mqtt.message.responses import GetGPSResponse
 
 
 def drone_is_initialized() -> bool:

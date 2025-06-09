@@ -1,7 +1,7 @@
 import json
 
 from reach.apps.mqtt.message import Message
-from reach.apps.mqtt.message.commands import GetGPSResponse
+from reach.apps.mqtt.message.responses import GetGPSResponse
 
 
 def serialize_message(message: Message) -> str:
