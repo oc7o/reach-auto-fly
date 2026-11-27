@@ -1,3 +1,5 @@
+# Arm-and-takeoff sequence adapted from DroneKit-Python examples (Apache-2.0 License).
+
 import time
 from logging import Logger, getLogger
 from typing import Any, ClassVar, Dict

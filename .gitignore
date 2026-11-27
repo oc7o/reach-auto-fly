@@ -5,6 +5,13 @@ logs/
 *.pt
 *.pth
 *.pb
+*.mov
+*.MOV
+*.mp4
+*.avi
+*.onnx
+*.tflite
+*.h5
 src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/
 
 ########################
@@ -17,9 +24,6 @@ src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
-
-# added for this project
-!.vscode/*.json
 
 # Local History for Visual Studio Code
 .history/

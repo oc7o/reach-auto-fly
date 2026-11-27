@@ -1,6 +1,6 @@
 # reach-auto-fly (v1 — Archived)
 
-> **Archived v1 prototype** from the original REACH project. Superseded by [`reach-core`](https://github.com/oc7o/reach-core) (Rust + gRPC + MAVLink) and [`reach-control`](https://github.com/oc7o/reach-control) (SwiftUI).
+> **Archived v1 prototype** of the REACH autonomous drone project. Superseded by [`reach-core`](https://github.com/oc7o/reach-core) (Rust + gRPC + MAVLink) and [`reach-control`](https://github.com/oc7o/reach-control) (SwiftUI).
 
 ## Overview
 

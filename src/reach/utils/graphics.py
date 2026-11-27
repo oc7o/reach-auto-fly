@@ -1,3 +1,6 @@
+# Bounding box drawing helpers adapted from the TensorFlow Hub Object Detection
+# tutorial (https://www.tensorflow.org/hub/tutorials/object_detection), Apache-2.0 License.
+
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageFont, ImageOps
 
