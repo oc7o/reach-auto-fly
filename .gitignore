@@ -1,6 +1,11 @@
 # Project
 
 tmp/
+logs/
+*.pt
+*.pth
+*.pb
+src/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/
 
 ########################
 ### VisualStudioCode ###

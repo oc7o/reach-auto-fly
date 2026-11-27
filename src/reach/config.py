@@ -24,9 +24,9 @@ MAX_PERSON_DATA_LIST_ENTRIES = 4
 SIMULATION_FRAME_SKIP = 5  # Default 1
 
 # MQTT
-BROKER_IP = (
-    "127.0.0.1"  # IP des MQTT-Brokers (z. B. dein RPi oder Mosquitto-Server)
-)
+BROKER_IP = os.environ.get(
+    "REACH_MQTT_BROKER", "127.0.0.1"
+)  # IP of the MQTT broker (e.g. Raspberry Pi / Mosquitto)
 TOPIC = "reach/drone"  # will deprecate
 
 COMMAND_TOPIC = "reach/command"

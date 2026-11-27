@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from typing import Any
 
@@ -9,7 +10,7 @@ client: MQTTClient = MQTTClient()
 
 COMMAND_TOPIC = "reach/command"
 
-client.connect("127.0.0.1", 1883, 60)
+client.connect(os.environ.get("REACH_MQTT_BROKER", "127.0.0.1"), 1883, 60)
 
 
 def exec_command(command: dict[str, Any], client: MQTTClient) -> None:
